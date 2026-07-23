@@ -30,7 +30,7 @@
     "APP_ENV": "staging",
     "APP_VERSION": "1.0.0",
 
-    "PUBLIC_ORIGIN": "https://mafiyaar-chatgpt.REPLACE_AFTER_FIRST_DEPLOY.workers.dev",
+    "PUBLIC_ORIGIN": "https://mafiyaar-chatgpt.mafiyaar007.workers.dev",
 
     "TURNSTILE_MODE": "disabled",
     "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
