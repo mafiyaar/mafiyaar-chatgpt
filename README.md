@@ -44,3 +44,5 @@ Read `RESOURCE_BOOTSTRAP.md`, `ENVIRONMENT_AND_SECRETS.md`, then `STAGING_RUNBOO
 - **Complete locally:** source and credential-free deterministic checks pass.
 - **External activation pending:** Cloudflare login/resources are required.
 - **Real-room validation pending:** six physical phones and people are required.
+
+Deployment trigger: Cloudflare staging
