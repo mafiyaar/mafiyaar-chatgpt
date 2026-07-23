@@ -35,13 +35,13 @@ export class MafiYaarRoom extends DurableObject<Env>{
     CREATE TABLE IF NOT EXISTS room_events(sequence INTEGER PRIMARY KEY AUTOINCREMENT,command_id TEXT UNIQUE,actor_account_id TEXT,event_type TEXT NOT NULL,phase_sequence INTEGER,visibility TEXT NOT NULL,payload_json TEXT NOT NULL,resulting_state_json TEXT NOT NULL,resulting_state_version INTEGER NOT NULL,rules_version TEXT NOT NULL,journal_version TEXT NOT NULL,created_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS command_budget(account_id TEXT NOT NULL,window_started_at INTEGER NOT NULL,attempts INTEGER NOT NULL,PRIMARY KEY(account_id,window_started_at));
   `);
-    const row=this.ctx.storage.sql.exec<{snapshot_json:string}>('SELECT snapshot_json FROM room_snapshot WHERE id=1').one();
+    const row=this.ctx.storage.sql.exec<{snapshot_json:string}>('SELECT snapshot_json FROM room_snapshot WHERE id=1').toArray()[0];
     if(row){const restored=parse<RoomEnvelope>(row.snapshot_json);this.assertVersions(restored.room);this.envelope=restored;const scheduled=await this.ctx.storage.getAlarm();if(restored.expectedAlarmAt!==null&&scheduled!==restored.expectedAlarmAt)await this.ctx.storage.setAlarm(restored.expectedAlarmAt);if(restored.expectedAlarmAt===null&&scheduled!==null)await this.ctx.storage.deleteAlarm();}
   });}
 
   private load():RoomEnvelope{
     if(this.envelope)return this.envelope;
-    const row=this.ctx.storage.sql.exec<any>('SELECT * FROM room_snapshot WHERE id=1').one();
+    const row=this.ctx.storage.sql.exec<any>('SELECT * FROM room_snapshot WHERE id=1').toArray()[0];
     if(!row)throw new ValidationError('ROOM_NOT_INITIALIZED','Room is unavailable.',404);
     let env=parse<RoomEnvelope>(row.snapshot_json);
     const tail=this.ctx.storage.sql.exec<StoredEvent>('SELECT sequence,resulting_state_json FROM room_events WHERE sequence>? ORDER BY sequence',env.lastEventSequence).toArray();
@@ -70,7 +70,7 @@ export class MafiYaarRoom extends DurableObject<Env>{
   private commandBudget(accountId:string,now:number){const window=Math.floor(now/10_000)*10_000;this.ctx.storage.sql.exec('INSERT INTO command_budget(account_id,window_started_at,attempts) VALUES(?,?,1) ON CONFLICT(account_id,window_started_at) DO UPDATE SET attempts=attempts+1',accountId,window);const row=this.ctx.storage.sql.exec<{attempts:number}>('SELECT attempts FROM command_budget WHERE account_id=? AND window_started_at=?',accountId,window).one();if((row.attempts&31)===1)this.ctx.storage.sql.exec('DELETE FROM command_budget WHERE window_started_at<?',now-60*60_000);if(row.attempts>80)throw new ValidationError('RATE_LIMITED','Too many commands.',429);}
 
   async initialize(input:InitializeInput):Promise<{memberId:string;view:PlayerView}>{
-    const existing=this.ctx.storage.sql.exec<any>('SELECT id FROM room_snapshot WHERE id=1').one();if(existing){const env=this.load(),m=this.requireMember(env.room,input.creator.accountId);return{memberId:m.playerId,view:this.safeView(env.room,input.creator.accountId)};}
+    const existing=this.ctx.storage.sql.exec<any>('SELECT id FROM room_snapshot WHERE id=1').toArray()[0];if(existing){const env=this.load(),m=this.requireMember(env.room,input.creator.accountId);return{memberId:m.playerId,view:this.safeView(env.room,input.creator.accountId)};}
     const now=Date.now();const settings=validateSettings(input.settings,this.env.APP_ENV==='test');const member={accountId:input.creator.accountId,playerId:`p-${randomId().slice(0,8)}`,displayName:input.creator.displayName,avatar:input.creator.avatar,ready:false,connected:true};
     const room:RoomState={id:input.publicCode,code:input.publicCode,inviteToken:'',creatorAccountId:input.creator.accountId,status:'lobby',settings,members:[member],match:null,createdAt:now,expiresAt:input.expiresAt,version:1};
     const env:RoomEnvelope={room,codeLookupHmac:input.codeLookupHmac,lastEventSequence:0,stateVersion:1,expectedAlarmAt:null,expectedAlarmKind:null,expectedPhaseSequence:null,archiveStatus:'none',archiveAttempts:0};this.prepareExpectedAlarm(env);this.persistInitial(env,now);await this.applyExpectedAlarm(env);return{memberId:member.playerId,view:this.safeView(room,input.creator.accountId)};
@@ -92,7 +92,7 @@ export class MafiYaarRoom extends DurableObject<Env>{
 
   async webSocketMessage(ws:WebSocket,message:ArrayBuffer|string):Promise<void>{
     const a=this.attachment(ws);if(!a){ws.close(1008,'Invalid attachment');return;}const raw=typeof message==='string'?message:new TextDecoder().decode(message);if(raw.length>16_384){ws.close(1009,'Message too large');return;}
-    try{const command=parseClientCommand(parse<unknown>(raw));if(command.type==='pong')return;const env=this.load();this.commandBudget(a.accountId,Date.now());if(command.roomId!==env.room.code)throw new ValidationError('ROOM_MISMATCH','Room mismatch.',403);if(command.commandId){const duplicate=this.ctx.storage.sql.exec<any>('SELECT sequence FROM room_events WHERE command_id=?',command.commandId).one();if(duplicate){ws.send(json({type:'command_accepted',sequence:'sequence'in command?command.sequence:0,serverTime:Date.now(),commandId:command.commandId}));return;}}
+    try{const command=parseClientCommand(parse<unknown>(raw));if(command.type==='pong')return;const env=this.load();this.commandBudget(a.accountId,Date.now());if(command.roomId!==env.room.code)throw new ValidationError('ROOM_MISMATCH','Room mismatch.',403);if(command.commandId){const duplicate=this.ctx.storage.sql.exec<any>('SELECT sequence FROM room_events WHERE command_id=?',command.commandId).toArray()[0];if(duplicate){ws.send(json({type:'command_accepted',sequence:'sequence'in command?command.sequence:0,serverTime:Date.now(),commandId:command.commandId}));return;}}
       const room=structuredClone(env.room);this.applyCommand(room,a.accountId,command);room.version++;const next:{[K in keyof RoomEnvelope]:RoomEnvelope[K]}={...env,room,stateVersion:env.stateVersion+1};this.prepareExpectedAlarm(next);this.persist(next,{commandId:command.commandId,actor:a.accountId,type:`command:${command.type}`,phaseSequence:command.phaseSequence,visibility:'server',payload:{type:command.type}},Date.now());await this.applyExpectedAlarm(next);if(room.status!==env.room.status)await this.env.DB.prepare('UPDATE room_codes SET status=?,updated_at=? WHERE durable_object_id=?').bind(room.status,Date.now(),this.ctx.id.toString()).run();this.broadcast(room);ws.send(json({type:'command_accepted',sequence:'sequence'in command?command.sequence:0,serverTime:Date.now(),commandId:command.commandId}));
     }catch(error){const e=error instanceof ValidationError?error:new ValidationError('COMMAND_FAILED','Action could not be completed.',400);ws.send(json({type:'error',code:e.code,message:e.message,recoverable:e.status<500}));}
   }
