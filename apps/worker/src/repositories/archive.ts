@@ -1,0 +1,21 @@
+import type { RoomState } from '../../../../packages/contracts/index.js';
+import type { Env } from '../env.js';
+
+export const ARCHIVE_VERSION='1.0.0';
+export class D1ArchiveWriter {
+  constructor(private env:Env){}
+  async archive(room:RoomState,roomCodeHmac:string):Promise<'created'|'exists'>{
+    const match=room.match;if(!match||!match.winner||!match.completedAt)throw new Error('MATCH_NOT_COMPLETE');
+    const accountFor=(playerId:string|null)=>match.players.find(p=>p.id===playerId)?.accountId??null;
+    const voteEvents=match.publicEvents.filter(event=>['vote_elimination','vote_tie','runoff_tie','no_elimination'].includes(event.type)&&Array.isArray(event.payload.ledger));
+    const archivedVotes=voteEvents.flatMap(event=>(event.payload.ledger as Array<{voterId:string;targetId:string|null}>).map(row=>({round:event.round,runoff:event.type==='runoff_tie'||event.payload.runoff===true,...row})));
+    const archive={archiveVersion:ARCHIVE_VERSION,matchId:match.id,rulesVersion:match.rulesVersion,engineVersion:match.engineVersion,startedAt:match.createdAt,endedAt:match.completedAt,winner:match.winner,players:match.players.map(p=>({accountId:p.accountId,playerId:p.id,role:p.role,alive:p.alive,eliminated:p.eliminated})),events:match.publicEvents,votes:archivedVotes,predictions:match.predictionHistory};
+    const statements:any[]=[this.env.DB.prepare('INSERT OR IGNORE INTO completed_matches(match_id,archive_version,room_code_hmac,rules_version,engine_version,started_at,ended_at,winner,rounds,archive_json,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(match.id,ARCHIVE_VERSION,roomCodeHmac,match.rulesVersion,match.engineVersion,match.createdAt,match.completedAt,match.winner,match.round,JSON.stringify(archive),Date.now())];
+    for(const p of match.players){const won=p.role===match.winner;statements.push(this.env.DB.prepare('INSERT OR IGNORE INTO completed_match_players(match_id,archive_version,account_id,player_id,role,won,outcome_json) VALUES(?,?,?,?,?,?,?)').bind(match.id,ARCHIVE_VERSION,p.accountId,p.id,p.role,Number(won),JSON.stringify({alive:p.alive,eliminated:p.eliminated??null})));}
+    match.publicEvents.forEach((event,index)=>statements.push(this.env.DB.prepare('INSERT OR IGNORE INTO completed_public_events(match_id,archive_version,sequence,event_type,event_json) VALUES(?,?,?,?,?)').bind(match.id,ARCHIVE_VERSION,index+1,event.type,JSON.stringify(event))));
+    archivedVotes.forEach(v=>{const voter=accountFor(v.voterId);if(voter)statements.push(this.env.DB.prepare('INSERT OR IGNORE INTO completed_votes(match_id,archive_version,round,voter_account_id,target_account_id,runoff) VALUES(?,?,?,?,?,?)').bind(match.id,ARCHIVE_VERSION,v.round,voter,accountFor(v.targetId),Number(v.runoff)));});
+    match.predictionHistory.forEach(p=>{const actor=accountFor(p.actorId);if(actor)statements.push(this.env.DB.prepare('INSERT OR IGNORE INTO completed_predictions(match_id,archive_version,round,actor_account_id,kind,target_account_id,actual_account_id,correct) VALUES(?,?,?,?,?,?,?,?)').bind(match.id,ARCHIVE_VERSION,p.round,actor,p.kind,accountFor(p.targetId),accountFor(p.actualId),Number(p.correct)));});
+    for(const p of match.players){const pred=match.predictionHistory.filter(x=>accountFor(x.actorId)===p.accountId);statements.push(this.env.DB.prepare(`UPDATE player_statistics SET matches_played=matches_played+1,wins=wins+?,mafia_games=mafia_games+?,civilian_games=civilian_games+?,predictions_correct=predictions_correct+?,predictions_total=predictions_total+?,updated_at=? WHERE account_id=? AND NOT EXISTS(SELECT 1 FROM statistics_applications WHERE match_id=? AND archive_version=? AND account_id=?)`).bind(Number(p.role===match.winner),Number(p.role==='mafia'),Number(p.role==='civilian'),pred.filter(x=>x.correct).length,pred.length,Date.now(),p.accountId,match.id,ARCHIVE_VERSION,p.accountId));statements.push(this.env.DB.prepare('INSERT OR IGNORE INTO statistics_applications(match_id,archive_version,account_id,applied_at) VALUES(?,?,?,?)').bind(match.id,ARCHIVE_VERSION,p.accountId,Date.now()));}
+    const existed=Boolean(await this.env.DB.prepare('SELECT 1 FROM completed_matches WHERE match_id=? AND archive_version=?').bind(match.id,ARCHIVE_VERSION).first());await this.env.DB.batch(statements);return existed?'exists':'created';
+  }
+}

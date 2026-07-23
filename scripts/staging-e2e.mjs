@@ -1,0 +1,2 @@
+const origin=(process.env.MAFIYAAR_STAGING_URL||'').replace(/\/$/,'');if(!origin){console.error('Set MAFIYAAR_STAGING_URL. Hosted WebSocket and browser tests use Playwright via npm run test:e2e:staging.');process.exit(2)}
+for(const p of ['/health','/version','/api/config','/']){const r=await fetch(origin+p);if(!r.ok)throw new Error(`${p}: ${r.status}`);console.log(`${p}: ${r.status}`)}console.log('HTTP staging preflight passed. Run the Playwright hosted suite for cookies, WebSockets, leak scans, reconnection, and Equal Action.');

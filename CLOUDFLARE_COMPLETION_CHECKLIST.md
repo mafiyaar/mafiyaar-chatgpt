@@ -1,0 +1,29 @@
+# Cloudflare Completion Checklist
+
+- [x] Architecture Lock hash verified and unchanged
+- [x] Baseline cryptographic manifest created
+- [x] Node reference independently rebuilt and retested
+- [x] Self-contained `cloudflare-production/` workspace
+- [x] Platform-neutral engine/contracts/copy/validation packages
+- [x] Worker + Static Assets integration
+- [x] D1 schema and migration
+- [x] Random Durable Object IDs and private routing
+- [x] HMAC room-code lookup with versioned rotation
+- [x] Opaque digest-stored WebSocket tickets
+- [x] SQLite-backed Durable Object
+- [x] Hibernatable WebSockets
+- [x] Snapshot-plus-journal recovery
+- [x] Persist-before-broadcast implementation
+- [x] Idempotent alarm and archive logic
+- [x] Match version pinning
+- [x] Six-digit PIN and secure session architecture
+- [x] Worker/DO throttling and Turnstile escalation
+- [x] PWA hosted API/ticket integration
+- [x] Credential-free type, engine, schema, security, leak and browser tests pass
+- [x] Real Chromium Equal Action comparisons pass
+- [ ] Official Wrangler/Workerd/Vitest suite — package registry HTTP 503
+- [ ] Generated package lock — package registry HTTP 503
+- [ ] Scrypt measured inside Workerd — blocked with official runtime tests
+- [ ] Public staging URL — Cloudflare activation pending
+- [ ] Hosted leak scan and multi-client suite — depends on staging
+- [ ] Six-real-phone validation — real people pending

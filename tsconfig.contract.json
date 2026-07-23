@@ -1,0 +1,5 @@
+{
+  "extends":"./tsconfig.json",
+  "compilerOptions":{"module":"NodeNext","moduleResolution":"NodeNext","outDir":".contract-build","noEmit":false,"declaration":false,"sourceMap":false,"types":[]},
+  "include":["packages/contracts/**/*.ts","packages/engine/**/*.ts","packages/validation/**/*.ts","packages/platform/**/*.ts"]
+}

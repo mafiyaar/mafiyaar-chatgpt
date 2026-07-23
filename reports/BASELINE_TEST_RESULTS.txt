@@ -1,0 +1,506 @@
+
+> mafiyaar-fullstack@1.0.0 test
+> node scripts/test.mjs
+
+
+=== build ===
+Build complete {
+  version: '1.0.0',
+  builtAt: '2026-07-23T18:26:05.892Z',
+  serverModules: 11,
+  clientModules: 3,
+  sharedModules: 4
+}
+
+=== typecheck ===
+
+=== typecheck-client ===
+
+=== lint ===
+Lint PASS: 43 source files inspected.
+
+=== unit ===
+TAP version 13
+# Subtest: username and PIN validation
+ok 1 - username and PIN validation
+  ---
+  duration_ms: 1.125233
+  type: 'test'
+  ...
+# Subtest: role assignment obeys mafia count
+ok 2 - role assignment obeys mafia count
+  ---
+  duration_ms: 0.617813
+  type: 'test'
+  ...
+# Subtest: living Mafia and Civilian receive identical N-1 grid counts
+ok 3 - living Mafia and Civilian receive identical N-1 grid counts
+  ---
+  duration_ms: 0.367576
+  type: 'test'
+  ...
+# Subtest: server grid excludes self but includes Mafia teammates
+ok 4 - server grid excludes self but includes Mafia teammates
+  ---
+  duration_ms: 0.322844
+  type: 'test'
+  ...
+# Subtest: player view contains no entropy, role map, actions, or other private view
+ok 5 - player view contains no entropy, role map, actions, or other private view
+  ---
+  duration_ms: 0.471232
+  type: 'test'
+  ...
+# Subtest: silent teammate selection wastes only that selection
+ok 6 - silent teammate selection wastes only that selection
+  ---
+  duration_ms: 0.445128
+  type: 'test'
+  ...
+# Subtest: multi-Mafia tie can produce peaceful night
+ok 7 - multi-Mafia tie can produce peaceful night
+  ---
+  duration_ms: 0.255418
+  type: 'test'
+  ...
+# Subtest: spectator vote prediction is excluded from real tally
+ok 8 - spectator vote prediction is excluded from real tally
+  ---
+  duration_ms: 1.167977
+  type: 'test'
+  ...
+# Subtest: main tie creates candidates and runoff tie creates no elimination
+ok 9 - main tie creates candidates and runoff tie creates no elimination
+  ---
+  duration_ms: 0.480289
+  type: 'test'
+  ...
+# Subtest: Mafia wins at parity and Civilians win when Mafia gone
+ok 10 - Mafia wins at parity and Civilians win when Mafia gone
+  ---
+  duration_ms: 0.571793
+  type: 'test'
+  ...
+# Subtest: starting modes branch correctly
+ok 11 - starting modes branch correctly
+  ---
+  duration_ms: 0.431984
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 75.045278
+
+=== scenarios ===
+TAP version 13
+# Subtest: all five-player roles acknowledge without exposing readiness by role
+ok 1 - all five-player roles acknowledge without exposing readiness by role
+  ---
+  duration_ms: 1.297515
+  type: 'test'
+  ...
+# Subtest: one-Mafia night kill and civilian victory scenario
+ok 2 - one-Mafia night kill and civilian victory scenario
+  ---
+  duration_ms: 1.316218
+  type: 'test'
+  ...
+# Subtest: two-Mafia majority resolves a shared target
+ok 3 - two-Mafia majority resolves a shared target
+  ---
+  duration_ms: 0.272915
+  type: 'test'
+  ...
+# Subtest: three-Mafia split uses random tied-target rule
+ok 4 - three-Mafia split uses random tied-target rule
+  ---
+  duration_ms: 0.229204
+  type: 'test'
+  ...
+# Subtest: previous-valid teammate rule preserves prior civilian target
+ok 5 - previous-valid teammate rule preserves prior civilian target
+  ---
+  duration_ms: 0.260484
+  type: 'test'
+  ...
+# Subtest: confirmed missing Mafia actions do not stall and produce no kill
+ok 6 - confirmed missing Mafia actions do not stall and produce no kill
+  ---
+  duration_ms: 0.275311
+  type: 'test'
+  ...
+# Subtest: duplicate client sequence is idempotent
+ok 7 - duplicate client sequence is idempotent
+  ---
+  duration_ms: 1.044649
+  type: 'test'
+  ...
+# Subtest: late action after phase closes is rejected
+ok 8 - late action after phase closes is rejected
+  ---
+  duration_ms: 0.398729
+  type: 'test'
+  ...
+# Subtest: Day Start routes opening discussion to vote
+ok 9 - Day Start routes opening discussion to vote
+  ---
+  duration_ms: 0.558379
+  type: 'test'
+  ...
+# Subtest: Opening Discussion routes to night
+ok 10 - Opening Discussion routes to night
+  ---
+  duration_ms: 0.449253
+  type: 'test'
+  ...
+# Subtest: Traditional start routes directly to night
+ok 11 - Traditional start routes directly to night
+  ---
+  duration_ms: 0.164221
+  type: 'test'
+  ...
+# Subtest: server-generated order is stable within one phase
+ok 12 - server-generated order is stable within one phase
+  ---
+  duration_ms: 0.264463
+  type: 'test'
+  ...
+# Subtest: self-vote is rejected while missed vote is allowed
+ok 13 - self-vote is rejected while missed vote is allowed
+  ---
+  duration_ms: 0.170718
+  type: 'test'
+  ...
+# Subtest: second tied runoff records no elimination instead of random execution
+ok 14 - second tied runoff records no elimination instead of random execution
+  ---
+  duration_ms: 0.263402
+  type: 'test'
+  ...
+# Subtest: technical pause preserves the current phase and remaining deadline
+ok 15 - technical pause preserves the current phase and remaining deadline
+  ---
+  duration_ms: 0.325395
+  type: 'test'
+  ...
+# Subtest: private actions are phase-scoped and never reused in a later round
+ok 16 - private actions are phase-scoped and never reused in a later round
+  ---
+  duration_ms: 0.273854
+  type: 'test'
+  ...
+# Subtest: prediction history records resolved night and vote predictions without exposing them live
+ok 17 - prediction history records resolved night and vote predictions without exposing them live
+  ---
+  duration_ms: 0.255835
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 69.941035
+
+=== database ===
+TAP version 13
+# (node:1149) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: all migrations apply in order
+ok 1 - all migrations apply in order
+  ---
+  duration_ms: 1.633198
+  type: 'test'
+  ...
+# Subtest: raw PIN never appears in account database
+ok 2 - raw PIN never appears in account database
+  ---
+  duration_ms: 46.689287
+  type: 'test'
+  ...
+# Subtest: secret tables are structurally separate from public events
+ok 3 - secret tables are structurally separate from public events
+  ---
+  duration_ms: 0.53941
+  type: 'test'
+  ...
+# Subtest: foreign keys reject orphan memberships
+ok 4 - foreign keys reject orphan memberships
+  ---
+  duration_ms: 0.711071
+  type: 'test'
+  ...
+# Subtest: room status and session indexes exist
+ok 5 - room status and session indexes exist
+  ---
+  duration_ms: 0.542621
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 117.87164
+
+=== static ===
+TAP version 13
+# Subtest: PWA manifest references existing icons
+ok 1 - PWA manifest references existing icons
+  ---
+  duration_ms: 0.743658
+  type: 'test'
+  ...
+# Subtest: HTML and service worker local assets exist
+ok 2 - HTML and service worker local assets exist
+  ---
+  duration_ms: 0.545037
+  type: 'test'
+  ...
+# Subtest: runtime QR encoder matches a standards-library version-5-L test vector
+ok 3 - runtime QR encoder matches a standards-library version-5-L test vector
+  ---
+  duration_ms: 4.266596
+  type: 'test'
+  ...
+# Subtest: production client has no inline script or dead hash links
+ok 4 - production client has no inline script or dead hash links
+  ---
+  duration_ms: 0.350876
+  type: 'test'
+  ...
+# Subtest: compiled JavaScript parses
+ok 5 - compiled JavaScript parses
+  ---
+  duration_ms: 76.737471
+  type: 'test'
+  ...
+# Subtest: design tokens used by statistics and balance panels are defined
+ok 6 - design tokens used by statistics and balance panels are defined
+  ---
+  duration_ms: 0.184209
+  type: 'test'
+  ...
+# Subtest: active-room shell renders non-navigating brand controls
+ok 7 - active-room shell renders non-navigating brand controls
+  ---
+  duration_ms: 0.77475
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 137.795442
+
+=== integration ===
+TAP version 13
+# Subtest: account creation, session restoration and profile update
+ok 1 - account creation, session restoration and profile update
+  ---
+  duration_ms: 171.822681
+  type: 'test'
+  ...
+# Subtest: login rotates older session and rejects old cookie
+ok 2 - login rotates older session and rejects old cookie
+  ---
+  duration_ms: 98.812468
+  type: 'test'
+  ...
+# Subtest: recovery architecture issues and consumes local development token
+ok 3 - recovery architecture issues and consumes local development token
+  ---
+  duration_ms: 139.537875
+  type: 'test'
+  ...
+# Subtest: room creation, invite QR, joining and home persistence
+ok 4 - room creation, invite QR, joining and home persistence
+  ---
+  duration_ms: 105.071806
+  type: 'test'
+  ...
+# Subtest: integration health exposes local provider status without secrets
+ok 5 - integration health exposes local provider status without secrets
+  ---
+  duration_ms: 1.98852
+  type: 'test'
+  ...
+# Subtest: lobby member can leave through authenticated API without dropping the room
+ok 6 - lobby member can leave through authenticated API without dropping the room
+  ---
+  duration_ms: 97.324489
+  type: 'test'
+  ...
+# Subtest: production HTTP server serves the stylesheet instead of the SPA fallback
+ok 7 - production HTTP server serves the stylesheet instead of the SPA fallback
+  ---
+  duration_ms: 2.741799
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 794.269778
+
+=== realtime ===
+TAP version 13
+# Subtest: six real WebSocket clients complete a filtered one-Mafia match and rematch
+ok 1 - six real WebSocket clients complete a filtered one-Mafia match and rematch
+  ---
+  duration_ms: 586.313067
+  type: 'test'
+  ...
+# Subtest: twelve real clients complete a filtered two-Mafia match
+ok 2 - twelve real clients complete a filtered two-Mafia match
+  ---
+  duration_ms: 915.404411
+  type: 'test'
+  ...
+# Subtest: twenty experimental clients complete a filtered three-Mafia match
+ok 3 - twenty experimental clients complete a filtered three-Mafia match
+  ---
+  duration_ms: 2226.584061
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3955.243346
+
+=== security ===
+TAP version 13
+# Subtest: CSRF blocks authenticated mutation without header
+ok 1 - CSRF blocks authenticated mutation without header
+  ---
+  duration_ms: 237.137632
+  type: 'test'
+  ...
+# Subtest: unauthenticated room view is rejected
+ok 2 - unauthenticated room view is rejected
+  ---
+  duration_ms: 3.675641
+  type: 'test'
+  ...
+# Subtest: cross-room member access is rejected
+ok 3 - cross-room member access is rejected
+  ---
+  duration_ms: 152.354974
+  type: 'test'
+  ...
+# Subtest: reserved usernames and weak PINs are rejected
+ok 4 - reserved usernames and weak PINs are rejected
+  ---
+  duration_ms: 14.553302
+  type: 'test'
+  ...
+# Subtest: login rate limiting eventually returns 429
+ok 5 - login rate limiting eventually returns 429
+  ---
+  duration_ms: 325.136647
+  type: 'test'
+  ...
+# Subtest: production environment rejects insecure cookies and dev tools
+ok 6 - production environment rejects insecure cookies and dev tools
+  ---
+  duration_ms: 2.060726
+  type: 'test'
+  ...
+# Subtest: security headers and CSP are present
+ok 7 - security headers and CSP are present
+  ---
+  duration_ms: 3.953874
+  type: 'test'
+  ...
+# Subtest: incompatible realtime client protocol is rejected before upgrade
+ok 8 - incompatible realtime client protocol is rejected before upgrade
+  ---
+  duration_ms: 68.126628
+  type: 'test'
+  ...
+# Subtest: operations endpoints require creator or configured operations key
+ok 9 - operations endpoints require creator or configured operations key
+  ---
+  duration_ms: 104.66213
+  type: 'test'
+  ...
+# Subtest: room-code guessing is rate limited
+ok 10 - room-code guessing is rate limited
+  ---
+  duration_ms: 63.310205
+  type: 'test'
+  ...
+# Subtest: WebSocket connections per IP are bounded
+ok 11 - WebSocket connections per IP are bounded
+  ---
+  duration_ms: 318.452671
+  type: 'test'
+  ...
+# Subtest: cross-origin WebSocket upgrade is rejected
+ok 12 - cross-origin WebSocket upgrade is rejected
+  ---
+  duration_ms: 46.821244
+  type: 'test'
+  ...
+# Subtest: unknown realtime commands are rejected without touching room state
+ok 13 - unknown realtime commands are rejected without touching room state
+  ---
+  duration_ms: 47.882259
+  type: 'test'
+  ...
+# Subtest: unmasked WebSocket client frames are closed as protocol errors
+ok 14 - unmasked WebSocket client frames are closed as protocol errors
+  ---
+  duration_ms: 44.742193
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1618.021282
+
+=== static-security ===
+Security static check PASS: 100 files, no secrets or server-truth fields in client bundle.
+
+=== equal-action ===
+Chromium execution blocked; running deterministic non-zero layout contract.
+{
+  "ok": true,
+  "mode": "deterministic-layout-contract",
+  "checks": 72,
+  "deviceSizes": 6,
+  "errors": [],
+  "note": "Browser-rendered test page also exists at /testing/equal-action.html. This contract rejects zero geometry and overflow."
+}
+
+PASS: 13/13 test stages.

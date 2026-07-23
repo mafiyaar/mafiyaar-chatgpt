@@ -1,0 +1,5 @@
+{
+  "extends":"./tsconfig.json",
+  "compilerOptions":{"noEmit":false,"outDir":"./.build-web","rootDir":".","types":[],"sourceMap":true},
+  "include":["apps/web/src/**/*.ts","packages/contracts/**/*.ts","packages/copy/**/*.ts"]
+}

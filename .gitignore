@@ -1,0 +1,17 @@
+node_modules/
+.wrangler/
+.dev.vars
+.env
+.env.*
+!/.env.example
+coverage/
+test-results/
+playwright-report/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+dist/worker/
+.contract-build/
+.release-check/
+MafiYaar_Cloudflare_Deploy_Ready_Final.zip

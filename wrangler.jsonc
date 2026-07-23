@@ -1,0 +1,123 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "mafiyaar-local",
+  "main": "./apps/worker/src/index.ts",
+  "compatibility_date": "2026-07-23",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "assets": {
+    "directory": "./apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/ws/*",
+      "/health",
+      "/version",
+      "/join/*"
+    ]
+  },
+  "vars": {
+    "APP_ENV": "local",
+    "APP_VERSION": "1.0.0",
+    "PUBLIC_ORIGIN": "http://localhost:8787",
+    "TURNSTILE_MODE": "disabled",
+    "TURNSTILE_SITE_KEY": "1x00000000000000000000AA",
+    "ROOM_TTL_HOURS": "12",
+    "SESSION_TTL_HOURS": "720",
+    "WS_TICKET_TTL_SECONDS": "45",
+    "ROOM_CODE_LOOKUP_KEY_VERSION": "hmac-v1"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mafiyaar-local-db",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "./migrations/d1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MAFIYAAR_ROOMS",
+        "class_name": "MafiYaarRoom"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "MafiYaarRoom"
+      ]
+    }
+  ],
+  "env": {
+    "staging": {
+      "name": "mafiyaar-staging",
+      "vars": {
+        "APP_ENV": "staging",
+        "APP_VERSION": "1.0.0",
+        "PUBLIC_ORIGIN": "https://mafiyaar-staging.example.workers.dev",
+        "TURNSTILE_MODE": "escalation",
+        "TURNSTILE_SITE_KEY": "REPLACE_STAGING_SITE_KEY",
+        "ROOM_TTL_HOURS": "12",
+        "SESSION_TTL_HOURS": "720",
+        "WS_TICKET_TTL_SECONDS": "45",
+        "ROOM_CODE_LOOKUP_KEY_VERSION": "hmac-v1"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "mafiyaar-staging-db",
+          "database_id": "00000000-0000-0000-0000-000000000002",
+          "migrations_dir": "./migrations/d1"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "MAFIYAAR_ROOMS",
+            "class_name": "MafiYaarRoom"
+          }
+        ]
+      }
+    },
+    "production": {
+      "name": "mafiyaar-production",
+      "vars": {
+        "APP_ENV": "production",
+        "APP_VERSION": "1.0.0",
+        "PUBLIC_ORIGIN": "https://play.mafiyaar.com",
+        "TURNSTILE_MODE": "escalation",
+        "TURNSTILE_SITE_KEY": "REPLACE_PRODUCTION_SITE_KEY",
+        "ROOM_TTL_HOURS": "12",
+        "SESSION_TTL_HOURS": "720",
+        "WS_TICKET_TTL_SECONDS": "45",
+        "ROOM_CODE_LOOKUP_KEY_VERSION": "hmac-v1"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "mafiyaar-production-db",
+          "database_id": "00000000-0000-0000-0000-000000000003",
+          "migrations_dir": "./migrations/d1"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "MAFIYAAR_ROOMS",
+            "class_name": "MafiYaarRoom"
+          }
+        ]
+      }
+    }
+  }
+}

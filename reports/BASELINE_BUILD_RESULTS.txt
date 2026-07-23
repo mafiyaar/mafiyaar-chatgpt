@@ -1,0 +1,11 @@
+
+> mafiyaar-fullstack@1.0.0 build
+> node scripts/build.mjs
+
+Build complete {
+  version: '1.0.0',
+  builtAt: '2026-07-23T18:26:03.819Z',
+  serverModules: 11,
+  clientModules: 3,
+  sharedModules: 4
+}

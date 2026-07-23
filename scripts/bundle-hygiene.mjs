@@ -1,0 +1,5 @@
+import fs from 'node:fs';import path from 'node:path';
+const roots=['apps/web/dist','dist/worker'];const forbiddenNames=['.dev.vars','.env','node_modules','.wrangler','.git'];const forbiddenText=['PIN_PEPPER','SESSION_HASH_SECRET','ROOM_CODE_LOOKUP_SECRET','INVITATION_HASH_SECRET','INTERNAL_ROUTING_SECRET','TURNSTILE_SECRET_KEY','durable_object_id','secretEntropyId','nightSubmissions','voteSubmissions','gridOrders'];const errors=[];
+function walk(p){if(!fs.existsSync(p))return[];return fs.statSync(p).isDirectory()?fs.readdirSync(p).flatMap(x=>walk(path.join(p,x))):[p]}
+for(const root of roots)for(const file of walk(root)){if(forbiddenNames.some(x=>file.split(path.sep).includes(x)))errors.push(`Forbidden path: ${file}`);if(/\.(js|html|json|css|map)$/.test(file)){const text=fs.readFileSync(file,'utf8');for(const x of forbiddenText)if(text.includes(x))errors.push(`${file} includes ${x}`)}}
+if(errors.length){console.error(errors.join('\n'));process.exit(1)}console.log(`Production bundle hygiene passed (${roots.flatMap(walk).length} files).`);

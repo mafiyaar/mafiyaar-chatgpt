@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": ".crypto-contract-build",
+    "rootDir": ".",
+    "strict": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "files": ["apps/worker/src/cloudflare-shim.d.ts", "apps/worker/src/security/crypto.ts"]
+}

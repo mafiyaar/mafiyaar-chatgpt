@@ -1,0 +1,23 @@
+name: Cloudflare CI
+on:
+  push:
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: if [ -f package-lock.json ]; then npm ci; else npm install --ignore-scripts; fi
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:contract
+      - run: npm run test:cloudflare
+      - run: npm run test:security
+      - run: npm run test:realtime
+      - run: npm run test:leak
+      - run: npm run build
+      - run: npm run verify:production-bundle
