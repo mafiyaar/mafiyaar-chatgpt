@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 900">
+<defs><radialGradient id="r"><stop stop-color="#e21c26"/><stop offset="1" stop-color="#6e0710"/></radialGradient><filter id="s"><feDropShadow dy="15" stdDeviation="14" flood-opacity=".45"/></filter></defs>
+<rect x="35" y="25" width="630" height="850" rx="42" fill="#09090a" stroke="#d4141f" stroke-width="7" filter="url(#s)"/>
+<circle cx="350" cy="360" r="240" fill="url(#r)"/>
+<g opacity=".35" fill="#070708"><path d="M115 610h470V725H115zM145 610V420h45v190zm90 0V350h60v260zm250 0V400h48v210z"/></g>
+<path d="M143 707c18-186 78-351 207-389 132-39 239 71 253 242 4 53 1 104-7 147z" fill="#111214"/>
+<path d="M232 306c13-100 80-157 166-157 102 0 165 74 169 158-105 22-230 21-335-1z" fill="#070708"/>
+<path d="M276 263c34-22 160-24 238 1-30-111-188-119-238-1z" fill="#191a1d"/>
+<path d="M289 344c45-19 122-18 164 1-9 88-33 139-82 139-50 0-74-51-82-140z" fill="#b69179"/>
+<path d="M303 348c42 26 95 27 137 0l-12 99-58 37-56-38z" fill="#080809"/>
+<path d="M335 484h72l23 105-61 53-59-54z" fill="#bd101a"/>
+<path d="M191 710c25-118 76-188 171-222l28 77 35-77c97 37 151 110 183 222z" fill="#111214"/>
+<text x="350" y="775" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="92" fill="#d71822">MAFIA</text>
+<text x="350" y="825" text-anchor="middle" font-family="Arial,sans-serif" letter-spacing="6" font-size="24" fill="#eadbcb">YOU KNOW WHO WE ARE</text>
+<text x="75" y="105" font-family="Georgia,serif" font-size="54" font-weight="900" fill="#d71822">M ♦</text>
+</svg>

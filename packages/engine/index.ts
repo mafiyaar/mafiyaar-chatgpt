@@ -1,8 +1,17 @@
 import type { MatchSettings, MatchState, PlayerState, PlayerView, PublicEvent, RoomState, Role, NightSubmission, VoteSubmission, Phase, VoteResult, NightResolutionRecord, DiscussionReadyView } from '../contracts/index.js';
 import { PROTOCOL_VERSION, RULES_VERSION, ENGINE_VERSION, STATE_SCHEMA_VERSION, JOURNAL_VERSION, COPY_VERSION, CLIENT_MINIMUM_VERSION } from '../contracts/index.js';
 
+function secureRandomFloat(): number {
+  const values = new Uint32Array(1);
+  globalThis.crypto.getRandomValues(values);
+  const value = values[0];
+  if (value === undefined) throw new Error('Secure random generation failed.');
+  return value / 4294967296;
+}
+
+
 export type RandomSource = (maxExclusive: number) => number;
-const defaultRandom: RandomSource = max => Math.floor(Math.random() * max);
+const defaultRandom: RandomSource = max => Math.floor(secureRandomFloat() * max);
 
 export function shuffle<T>(input: readonly T[], random: RandomSource = defaultRandom): T[] {
   const out = [...input];

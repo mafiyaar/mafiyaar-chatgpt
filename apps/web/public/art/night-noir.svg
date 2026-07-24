@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 650">
+<defs><radialGradient id="r"><stop stop-color="#e01c26"/><stop offset="1" stop-color="#770811"/></radialGradient><filter id="s"><feDropShadow dy="12" stdDeviation="18" flood-opacity=".32"/></filter></defs>
+<circle cx="510" cy="305" r="260" fill="url(#r)"/>
+<g opacity=".28" fill="#19070a"><path d="M0 555h1000v95H0zM70 555V350h45v205zm80 0V265h62v290zm690 0V315h48v240zm70 0V235h64v320z"/></g>
+<g filter="url(#s)">
+<path d="M248 617c20-188 84-350 252-391 172-42 306 91 331 391z" fill="#0c0d0f"/>
+<path d="M353 213c13-102 85-164 178-164 108 0 178 79 181 164-115 24-245 23-359 0z" fill="#080809"/>
+<path d="M398 169c35-24 172-26 260 1-29-121-205-129-260-1z" fill="#18191c"/>
+<path d="M407 258c49-21 133-21 181 1-9 97-37 154-91 154-56 0-82-58-90-155z" fill="#b5947e"/>
+<path d="M420 262c45 28 111 29 155 0l-13 113-66 38-64-40z" fill="#09090a"/>
+<path d="M476 403h48l13 68-38 39-38-39z" fill="#b80f19"/>
+<path d="M488 323c-54 42-85 81-99 119 24 39 59 65 107 65 45 0 84-22 111-65-17-43-53-83-104-120z" fill="#d7bca6"/>
+<path d="M494 303c22 0 41 20 41 44 0 54-13 101-41 101-28 0-41-47-41-101 0-24 18-44 41-44z" fill="#b38f78"/>
+<path d="M487 332h15v95h-15z" fill="#060607"/><circle cx="494" cy="326" r="14" fill="#060607"/>
+<path d="M259 626c31-141 87-219 188-259l52 77 58-77c109 43 170 124 211 259z" fill="#101114"/>
+</g>
+<g fill="#eee1d4" stroke="#6c4d42" stroke-width="3" transform="rotate(-8 150 250)"><rect x="55" y="135" width="210" height="235" rx="14"/><text x="80" y="206" font-family="serif" font-size="34" fill="#121212">TONIGHT,</text><text x="82" y="252" font-family="serif" font-size="34" fill="#121212">SILENCE</text><text x="80" y="300" font-family="serif" font-size="34" fill="#121212">KILLS.</text></g>
+</svg>

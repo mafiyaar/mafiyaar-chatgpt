@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720">
+<defs><filter id="s"><feDropShadow dy="14" stdDeviation="15" flood-opacity=".24"/></filter></defs>
+<g filter="url(#s)"><rect x="115" y="50" width="490" height="580" rx="20" fill="#d8c7b4" stroke="#8a7567" stroke-width="8"/>
+<circle cx="360" cy="270" r="125" fill="#bfa591"/><path d="M235 255c18-127 220-143 251-7-90-50-170-45-251 7z" fill="#121315"/>
+<path d="M265 314c45-22 141-22 188 0-9 108-38 169-94 169-58 0-85-62-94-169z" fill="#a9856f"/>
+<path d="M273 321c48 29 129 30 176 0l-16 120-75 42-72-44z" fill="#141517"/>
+<path d="M212 570c26-117 72-177 147-198 77 22 123 84 149 198z" fill="#111214"/>
+<path d="M170 125 560 570M550 120 170 570" stroke="#bd111b" stroke-width="34" stroke-linecap="round" opacity=".9"/>
+<path d="M125 535c130 20 348 20 470 0v105c-129 22-341 22-470 0z" fill="#e6d7c8" stroke="#8a7567" stroke-width="7"/>
+<text x="360" y="605" text-anchor="middle" font-family="Georgia,serif" font-size="58" font-weight="900" fill="#151515">OUT</text></g>
+<path d="M180 92c45-98 128-50 138 15-58-27-89 10-104 65-23-18-35-44-34-80z" fill="#080809"/>
+</svg>

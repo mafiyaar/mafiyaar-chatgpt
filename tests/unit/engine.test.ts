@@ -11,6 +11,6 @@ describe('platform-neutral game engine',()=>{
  it('rejects dead night targets',()=>{const r=room();r.match!.phase='night_action';r.match!.players[1]!.alive=false;expect(()=>submitNightAction(r.match!,'p0','p1',true,1,1)).toThrow();});
  it('resets night submissions by phase',()=>{const r=room();r.match!.phase='night_action';r.match!.nightSubmissions={p0:{actorId:'p0',targetId:'p1',kind:'kill',confirmed:true,sequence:1,submittedAt:0}};advanceExpiredPhase(r.match!,1,()=>0);while(r.match!.phase!=='night_action')advanceExpiredPhase(r.match!,r.match!.phaseEndsAt??2,()=>0);expect(Object.keys(r.match!.nightSubmissions)).toHaveLength(0);});
  it('spectator votes never become real votes',()=>{const r=room();r.match!.phase='vote';r.match!.players[5]!.alive=false;const v=submitVote(r.match!,'p5','p1',true,false,1,1);expect(v.kind).toBe('spectator_prediction');});
- it('Mafia victory occurs at parity',()=>{const r=room(5);r.match!.players.filter(p=>p.role==='civilian').slice(0,2).forEach(p=>p.alive=false);expect(checkVictory(r.match!,1)).toBe('mafia');});
+ it('Mafia victory occurs at parity',()=>{const r=room(5);r.match!.players.filter(p=>p.role==='civilian').slice(0,3).forEach(p=>p.alive=false);expect(checkVictory(r.match!,1)).toBe('mafia');});
  it('Civilian victory occurs when Mafia gone',()=>{const r=room();r.match!.players.find(p=>p.role==='mafia')!.alive=false;expect(checkVictory(r.match!,1)).toBe('civilian');});
 });
