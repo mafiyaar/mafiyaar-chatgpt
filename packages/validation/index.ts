@@ -57,7 +57,8 @@ export function validateSettings(input: Partial<MatchSettings>, testMode = false
     confirmationMode: input.confirmationMode === 'accessible-tap' ? 'accessible-tap' : 'hold',
     locale: validateLocale(input.locale), preset,
     timers: { ...presets[preset], ...(testMode && input.timers ? input.timers : {}) },
-    roleRevealMode: input.roleRevealMode === 'timed-accessible' ? 'timed-accessible' : 'all-ack'
+    roleRevealMode: input.roleRevealMode === 'timed-accessible' ? 'timed-accessible' : 'all-ack',
+    nightProtection: input.nightProtection === 'off' ? 'off' : 'bachao'
   };
 }
 
@@ -93,6 +94,7 @@ export function parseClientCommand(value: unknown): ClientCommand {
     case 'ready': return { type, roomId, ready: booleanField(obj, 'ready'), sequence: integerField(obj, 'sequence'), ...base };
     case 'start': return { type, roomId, sequence: integerField(obj, 'sequence'), ...base };
     case 'ack_role': return { type, roomId, sequence: integerField(obj, 'sequence'), ...base };
+    case 'discussion_ready': return { type, roomId, ready: booleanField(obj, 'ready'), sequence: integerField(obj, 'sequence'), phaseSequence: integerField(obj, 'phaseSequence'), ...(commandId ? { commandId } : {}) };
     case 'night_action': return { type, roomId, targetId: targetField(obj), confirmed: booleanField(obj, 'confirmed'), sequence: integerField(obj, 'sequence'), phaseSequence: integerField(obj, 'phaseSequence'), ...(commandId ? { commandId } : {}) };
     case 'vote': return { type, roomId, targetId: targetField(obj), confirmed: booleanField(obj, 'confirmed'), runoff: booleanField(obj, 'runoff'), sequence: integerField(obj, 'sequence'), phaseSequence: integerField(obj, 'phaseSequence'), ...(commandId ? { commandId } : {}) };
     case 'rematch': return { type, roomId, sameSettings: booleanField(obj, 'sameSettings'), sequence: integerField(obj, 'sequence'), ...base };

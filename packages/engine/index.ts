@@ -1,4 +1,4 @@
-import type { MatchSettings, MatchState, PlayerState, PlayerView, PublicEvent, RoomState, Role, NightSubmission, VoteSubmission, Phase } from '../contracts/index.js';
+import type { MatchSettings, MatchState, PlayerState, PlayerView, PublicEvent, RoomState, Role, NightSubmission, VoteSubmission, Phase, VoteResult, NightResolutionRecord, DiscussionReadyView } from '../contracts/index.js';
 import { PROTOCOL_VERSION, RULES_VERSION, ENGINE_VERSION, STATE_SCHEMA_VERSION, JOURNAL_VERSION, COPY_VERSION, CLIENT_MINIMUM_VERSION } from '../contracts/index.js';
 
 export type RandomSource = (maxExclusive: number) => number;
@@ -52,7 +52,9 @@ export function createMatch(params: {
     round: 1, winner: null, settings: params.settings, players,
     nightSubmissions: {}, voteSubmissions: {}, runoffSubmissions: {}, gridOrders: {}, publicEvents: [],
     lastVictimId: null, lastEliminatedId: null, lastVoteLedger: [], tieCandidates: [], noEliminationReason: null,
-    createdAt: now, completedAt: null, secretEntropyId: params.entropyId, predictionHistory: [], technicalPause: null
+    createdAt: now, completedAt: null, secretEntropyId: params.entropyId, predictionHistory: [],
+    voteHistory: [], nightResolutionHistory: [], discussionReady: {}, discussionEligibleIds: [],
+    discussionOriginalEndsAt: null, discussionEarliestAt: null, discussionAdvanceAt: null, technicalPause: null
   };
   event(match, 'match_started', { playerCount: players.length, startModel: params.settings.startModel }, now);
   return match;
@@ -73,11 +75,86 @@ export function startAfterRoleReveal(match: MatchState, now = Date.now()): void 
   else setPhase(match, 'opening_discussion', now);
 }
 
+export function isDiscussionPhase(phase: Phase): boolean {
+  return phase === 'opening_discussion' || phase === 'discussion' || phase === 'runoff_discussion';
+}
+
+function ensureDiscussionState(match: MatchState): void {
+  if (!isDiscussionPhase(match.phase)) return;
+  if (!Array.isArray(match.discussionEligibleIds) || match.discussionEligibleIds.length === 0) {
+    match.discussionEligibleIds = livingPlayers(match).map(player => player.id);
+  }
+  match.discussionReady ??= {};
+  match.discussionOriginalEndsAt = match.discussionOriginalEndsAt ?? match.phaseEndsAt;
+  if (match.discussionEarliestAt == null) {
+    const fallbackEnd = match.discussionOriginalEndsAt ?? match.phaseStartedAt + 60_000;
+    match.discussionEarliestAt = match.phaseStartedAt + Math.max(0, Math.round((fallbackEnd - match.phaseStartedAt) / 3));
+  }
+  match.discussionAdvanceAt ??= null;
+}
+
+function discussionCounts(match: MatchState): { readyCount: number; total: number; allReady: boolean } {
+  ensureDiscussionState(match);
+  const eligible = match.discussionEligibleIds ?? [];
+  const readyCount = eligible.filter(id => {
+    const player = playerById(match, id);
+    return Boolean(player?.alive && player.connected && match.discussionReady?.[id]);
+  }).length;
+  return { readyCount, total: eligible.length, allReady: eligible.length > 0 && readyCount === eligible.length };
+}
+
+export function discussionReadyView(match: MatchState, playerId: string, now = Date.now()): DiscussionReadyView | undefined {
+  if (!isDiscussionPhase(match.phase)) return undefined;
+  const counts = discussionCounts(match);
+  const countdownStartsAt = match.discussionAdvanceAt == null ? null : match.discussionAdvanceAt - 3000;
+  return {
+    readyCount: counts.readyCount,
+    total: counts.total,
+    selfReady: Boolean(match.discussionReady?.[playerId]),
+    locked: countdownStartsAt !== null && now >= countdownStartsAt,
+    earliestAt: match.discussionEarliestAt ?? null,
+    advanceAt: match.discussionAdvanceAt ?? null
+  };
+}
+
+export function reconcileDiscussionReady(match: MatchState, now = Date.now()): void {
+  if (!isDiscussionPhase(match.phase)) return;
+  ensureDiscussionState(match);
+  const counts = discussionCounts(match);
+  if (!counts.allReady) {
+    if (match.discussionAdvanceAt !== null) {
+      match.discussionAdvanceAt = null;
+      match.phaseEndsAt = match.discussionOriginalEndsAt;
+      event(match, 'discussion_early_vote_cancelled', { readyCount: counts.readyCount, total: counts.total }, now);
+    }
+    return;
+  }
+  if (match.discussionAdvanceAt !== null) return;
+  const earliestAt = match.discussionEarliestAt ?? now;
+  const candidate = Math.max(now, earliestAt) + 3000;
+  const advanceAt = match.discussionOriginalEndsAt == null ? candidate : Math.min(match.discussionOriginalEndsAt, candidate);
+  match.discussionAdvanceAt = advanceAt;
+  match.phaseEndsAt = advanceAt;
+  event(match, 'discussion_all_ready', { readyCount: counts.readyCount, total: counts.total, advanceAt }, now);
+}
+
+export function setDiscussionReady(match: MatchState, playerId: string, ready: boolean, now = Date.now()): void {
+  if (!isDiscussionPhase(match.phase)) throw new Error('Discussion readiness is closed.');
+  ensureDiscussionState(match);
+  const player = playerById(match, playerId);
+  if (!player?.alive || !match.discussionEligibleIds.includes(playerId)) throw new Error('Player cannot ready this discussion.');
+  const countdownStartsAt = match.discussionAdvanceAt == null ? null : match.discussionAdvanceAt - 3000;
+  if (countdownStartsAt !== null && now >= countdownStartsAt) throw new Error('Voting transition has started.');
+  match.discussionReady[playerId] = ready;
+  const counts = discussionCounts(match);
+  event(match, 'discussion_ready_changed', { readyCount: counts.readyCount, total: counts.total }, now);
+  reconcileDiscussionReady(match, now);
+}
+
 export function setPhase(match: MatchState, phase: Phase, now = Date.now()): void {
   match.phase = phase;
   match.phaseSequence += 1;
   match.phaseStartedAt = now;
-  // Secret inputs are valid only inside the phase in which they were submitted.
   if (phase === 'night_action') match.nightSubmissions = {};
   if (phase === 'vote') match.voteSubmissions = {};
   if (phase === 'runoff_vote') match.runoffSubmissions = {};
@@ -102,8 +179,22 @@ export function setPhase(match: MatchState, phase: Phase, now = Date.now()): voi
     abandoned: 0,
     lobby: 0
   };
-  const duration = seconds[phase] ?? 0;
+  const rawDuration = seconds[phase] ?? 0;
+  const duration = isDiscussionPhase(phase) && rawDuration <= 0 && match.settings.preset !== 'test' ? 15 : rawDuration;
   match.phaseEndsAt = duration > 0 ? now + Math.round(duration * 1000) : null;
+  if (isDiscussionPhase(phase)) {
+    match.discussionEligibleIds = livingPlayers(match).map(player => player.id);
+    match.discussionReady = Object.fromEntries(match.discussionEligibleIds.map(id => [id, false]));
+    match.discussionOriginalEndsAt = match.phaseEndsAt;
+    match.discussionEarliestAt = now + Math.round(duration * 1000 / 3);
+    match.discussionAdvanceAt = null;
+  } else {
+    match.discussionReady = {};
+    match.discussionEligibleIds = [];
+    match.discussionOriginalEndsAt = null;
+    match.discussionEarliestAt = null;
+    match.discussionAdvanceAt = null;
+  }
   event(match, 'phase_started', { phase, endsAt: match.phaseEndsAt }, now);
 }
 
@@ -150,12 +241,17 @@ export function resolveNight(match: MatchState, random: RandomSource = defaultRa
       continue;
     }
     switch (match.settings.teammateSelectionRule) {
-      case 'previous-valid': if (mafia.previousValidNightTarget && playerById(match, mafia.previousValidNightTarget)?.alive) validTargets.push(mafia.previousValidNightTarget); break;
-      case 'no-action': break;
+      case 'previous-valid':
+        if (mafia.previousValidNightTarget && playerById(match, mafia.previousValidNightTarget)?.alive) validTargets.push(mafia.previousValidNightTarget);
+        break;
       case 'lose-kill': forceLoseKill = true; break;
-      case 'silent-waste': break;
+      case 'no-action':
+      case 'silent-waste':
+        break;
     }
   }
+
+  let mafiaTargetId: string | null = null;
   let victimId: string | null = null;
   let method = forceLoseKill ? 'invalid_teammate_selection_lost_kill' : 'no_valid_mafia_action';
   if (!forceLoseKill && validTargets.length) {
@@ -163,30 +259,76 @@ export function resolveNight(match: MatchState, random: RandomSource = defaultRa
     for (const id of validTargets) counts.set(id, (counts.get(id) ?? 0) + 1);
     const top = Math.max(...counts.values());
     const tied = [...counts.entries()].filter(([, count]) => count === top).map(([id]) => id);
-    if (tied.length === 1) { victimId = tied[0]!; method = 'majority'; }
+    if (tied.length === 1) { mafiaTargetId = tied[0]!; method = 'majority'; }
     else if (match.settings.multiMafiaRule === 'no-kill') method = 'mafia_tie_no_kill';
     else if (match.settings.multiMafiaRule === 'hidden-lead') {
       const mafia = livingMafia(match);
       const lead = mafia[(match.round - 1) % mafia.length];
       const leadTarget = lead ? match.nightSubmissions[lead.id]?.targetId : null;
-      victimId = leadTarget && tied.includes(leadTarget) ? leadTarget : tied[0]!;
+      mafiaTargetId = leadTarget && tied.includes(leadTarget) ? leadTarget : tied[0]!;
       method = 'hidden_lead';
-    } else { victimId = tied[random(tied.length)]!; method = 'random_tied_target'; }
+    } else {
+      mafiaTargetId = tied[random(tied.length)]!;
+      method = 'random_tied_target';
+    }
   }
-  if (victimId) {
+
+  let protectionVotes = 0;
+  let protectionRequired = 0;
+  let protectedByCivilians = false;
+  if (mafiaTargetId && (match.settings.nightProtection ?? 'off') === 'bachao') {
+    const predictions = livingCivilians(match)
+      .map(player => match.nightSubmissions[player.id])
+      .filter((submission): submission is NightSubmission => Boolean(submission?.confirmed && submission.targetId && submission.kind === 'civilian_prediction'));
+    const predictionCounts = new Map<string, number>();
+    for (const submission of predictions) predictionCounts.set(submission.targetId!, (predictionCounts.get(submission.targetId!) ?? 0) + 1);
+    if (predictionCounts.size) {
+      const top = Math.max(...predictionCounts.values());
+      const leaders = [...predictionCounts.entries()].filter(([, count]) => count === top);
+      const uniqueLeader = leaders.length === 1 ? leaders[0]![0] : null;
+      protectionVotes = uniqueLeader === mafiaTargetId ? top : 0;
+      protectionRequired = Math.max(2, Math.ceil(Math.max(0, livingCivilians(match).length - 1) * 2 / 3));
+      protectedByCivilians = uniqueLeader === mafiaTargetId && protectionVotes >= protectionRequired;
+    }
+  }
+
+  if (mafiaTargetId && !protectedByCivilians) {
+    victimId = mafiaTargetId;
     const victim = playerById(match, victimId)!;
     victim.alive = false;
     victim.eliminated = { reason: 'night', round: match.round };
     match.lastVictimId = victimId;
     match.lastEliminatedId = victimId;
-    event(match, 'night_kill', { victimId, method }, now);
+    event(match, 'night_kill', { victimId }, now);
   } else {
     match.lastVictimId = null;
-    event(match, 'no_kill', { method }, now);
+    match.lastEliminatedId = null;
+    if (protectedByCivilians) method = 'civilian_protection';
+    event(match, 'no_kill', {}, now);
   }
+
+  const outcome: NightResolutionRecord['outcome'] = protectedByCivilians ? 'protected' : victimId ? 'kill' : 'no_kill';
+  match.nightResolutionHistory ??= [];
+  match.nightResolutionHistory.push({
+    round: match.round,
+    targetId: mafiaTargetId,
+    victimId,
+    outcome,
+    protectionVotes,
+    protectionRequired,
+    method
+  });
+
   for (const submission of Object.values(match.nightSubmissions)) {
     if (submission.kind === 'kill' || !submission.confirmed) continue;
-    match.predictionHistory.push({ actorId: submission.actorId, kind: 'night', round: match.round, targetId: submission.targetId, actualId: victimId, correct: submission.targetId === victimId });
+    match.predictionHistory.push({
+      actorId: submission.actorId,
+      kind: 'night',
+      round: match.round,
+      targetId: submission.targetId,
+      actualId: mafiaTargetId,
+      correct: submission.targetId === mafiaTargetId
+    });
   }
   return { victimId, method };
 }
@@ -211,6 +353,7 @@ export function submitVote(match: MatchState, playerId: string, targetId: string
 export function resolveVote(match: MatchState, runoff: boolean, now = Date.now()): { eliminatedId: string | null; tied: string[] } {
   const store = runoff ? match.runoffSubmissions : match.voteSubmissions;
   const living = livingPlayers(match);
+  const candidates = living.map(player => player.id);
   const ledger = living.map(voter => ({ voterId: voter.id, targetId: store[voter.id]?.confirmed ? store[voter.id]!.targetId : null }));
   const counts = new Map<string, number>();
   for (const row of ledger) if (row.targetId) counts.set(row.targetId, (counts.get(row.targetId) ?? 0) + 1);
@@ -232,11 +375,25 @@ export function resolveVote(match: MatchState, runoff: boolean, now = Date.now()
     event(match, 'vote_elimination', { eliminatedId, runoff, ledger }, now);
   } else if (tied.length > 1) {
     match.noEliminationReason = runoff ? 'runoff_tie' : 'main_vote_tie';
-    event(match, runoff ? 'runoff_tie' : 'vote_tie', { tied, ledger }, now);
+    event(match, runoff ? 'runoff_tie' : 'vote_tie', { tied, runoff, ledger }, now);
   } else {
     match.noEliminationReason = 'no_votes';
     event(match, 'no_elimination', { reason: 'no_votes', runoff, ledger }, now);
   }
+
+  const result: VoteResult = {
+    round: match.round,
+    runoff,
+    candidates,
+    ledger,
+    eliminatedId,
+    tiedIds: [...tied],
+    noVotePlayerIds: ledger.filter(row => !row.targetId).map(row => row.voterId),
+    resolvedAt: now
+  };
+  match.voteHistory ??= [];
+  match.voteHistory.push(result);
+
   for (const submission of Object.values(store)) {
     if (submission.kind !== 'spectator_prediction' || !submission.confirmed) continue;
     match.predictionHistory.push({ actorId: submission.actorId, kind: 'vote', round: match.round, targetId: submission.targetId, actualId: eliminatedId, correct: submission.targetId === eliminatedId });
@@ -372,16 +529,22 @@ export function viewFor(room: RoomState, accountId: string): PlayerView {
   const actionPhase = match.phase === 'night_action' || match.phase === 'vote' || match.phase === 'runoff_vote';
   const night = match.nightSubmissions[self.id];
   const vote = match.phase === 'runoff_vote' ? match.runoffSubmissions[self.id] : match.voteSubmissions[self.id];
+  const lastVoteResult = (match.voteHistory ?? []).at(-1) ?? null;
+  const readyStatus = discussionReadyView(match, self.id);
   const summary = match.phase === 'summary' ? {
     players: match.players.map(p => ({ id: p.id, displayName: p.displayName, role: p.role, alive: p.alive, ...(p.eliminated ? { eliminated: p.eliminated } : {}) })),
     events: match.publicEvents,
-    predictions: predictionSummary(match)
+    predictions: predictionSummary(match),
+    votingHistory: match.voteHistory ?? [],
+    nightResults: (match.nightResolutionHistory ?? []).map(({ round, targetId, victimId, outcome, protectionVotes, protectionRequired }) => ({ round, targetId, victimId, outcome, protectionVotes, protectionRequired }))
   } : undefined;
   base.match = {
     id: match.id, phase: match.phase, phaseSequence: match.phaseSequence, phaseStartedAt: match.phaseStartedAt,
     phaseEndsAt: match.phaseEndsAt, round: match.round, winner: match.winner, publicEvents: match.publicEvents,
     lastVictimId: match.lastVictimId, lastEliminatedId: match.lastEliminatedId, lastVoteLedger: match.lastVoteLedger,
     tieCandidates: match.tieCandidates, noEliminationReason: match.noEliminationReason,
+    lastVoteResult,
+    ...(readyStatus ? { discussionReady: readyStatus } : {}),
     self: {
       id: self.id, ...(roleVisible ? { role: self.role } : {}), alive: self.alive, acknowledged: self.roleAcknowledged,
       ...(roleVisible && self.role === 'mafia' ? { teammates: match.players.filter(p => p.role === 'mafia' && p.id !== self.id).map(p => p.id) } : {}),
@@ -398,6 +561,6 @@ export function viewFor(room: RoomState, accountId: string): PlayerView {
 
 export function assertNoHiddenState(view: PlayerView): void {
   const serialized = JSON.stringify(view);
-  const forbidden = ['secretEntropyId', 'gridOrders', 'nightSubmissions', 'voteSubmissions', 'runoffSubmissions', 'predictionHistory', 'inviteToken'];
+  const forbidden = ['secretEntropyId', 'gridOrders', 'nightSubmissions', 'voteSubmissions', 'runoffSubmissions', 'predictionHistory', 'nightResolutionHistory', 'inviteToken'];
   for (const key of forbidden) if (serialized.includes(key)) throw new Error(`Hidden field leaked: ${key}`);
 }

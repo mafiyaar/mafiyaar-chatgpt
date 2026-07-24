@@ -12,6 +12,7 @@ export type AlignmentReveal = 'on' | 'off';
 export type MultiMafiaRule = 'random-tied' | 'hidden-lead' | 'no-kill';
 export type TeammateSelectionRule = 'silent-waste' | 'previous-valid' | 'no-action' | 'lose-kill';
 export type ConfirmationMode = 'hold' | 'accessible-tap';
+export type NightProtection = 'off' | 'bachao';
 export type Phase =
   | 'lobby' | 'role_reveal' | 'opening_discussion' | 'night_transition'
   | 'night_action' | 'night_resolution' | 'morning' | 'discussion'
@@ -44,6 +45,7 @@ export interface MatchSettings {
   preset: 'fast' | 'standard' | 'relaxed' | 'test';
   timers: TimerPreset;
   roleRevealMode: 'all-ack' | 'timed-accessible';
+  nightProtection: NightProtection;
 }
 
 export interface PlayerState {
@@ -78,6 +80,39 @@ export interface VoteSubmission {
   confirmed: boolean;
   sequence: number;
   submittedAt: number;
+}
+
+export interface VoteResult {
+  round: number;
+  runoff: boolean;
+  candidates: string[];
+  ledger: Array<{ voterId: string; targetId: string | null }>;
+  eliminatedId: string | null;
+  tiedIds: string[];
+  noVotePlayerIds: string[];
+  resolvedAt: number;
+}
+
+export interface NightResult {
+  round: number;
+  targetId: string | null;
+  victimId: string | null;
+  outcome: 'kill' | 'protected' | 'no_kill';
+  protectionVotes: number;
+  protectionRequired: number;
+}
+
+export interface NightResolutionRecord extends NightResult {
+  method: string;
+}
+
+export interface DiscussionReadyView {
+  readyCount: number;
+  total: number;
+  selfReady: boolean;
+  locked: boolean;
+  earliestAt: number | null;
+  advanceAt: number | null;
 }
 
 export interface PublicEvent {
@@ -120,6 +155,13 @@ export interface MatchState {
   completedAt: number | null;
   secretEntropyId: string;
   predictionHistory: Array<{ actorId: string; kind: 'night' | 'vote'; round: number; targetId: string | null; actualId: string | null; correct: boolean }>;
+  voteHistory: VoteResult[];
+  nightResolutionHistory: NightResolutionRecord[];
+  discussionReady: Record<string, boolean>;
+  discussionEligibleIds: string[];
+  discussionOriginalEndsAt: number | null;
+  discussionEarliestAt: number | null;
+  discussionAdvanceAt: number | null;
   technicalPause: null | { previousPhase: Phase; remainingMs: number; reason: string; startedAt: number };
 }
 
@@ -170,6 +212,8 @@ export interface PlayerView {
     lastVoteLedger: Array<{ voterId: string; targetId: string | null }>;
     tieCandidates: string[];
     noEliminationReason: string | null;
+    lastVoteResult: VoteResult | null;
+    discussionReady?: DiscussionReadyView;
     self: {
       id: string;
       role?: Role;
@@ -186,6 +230,8 @@ export interface PlayerView {
       players: Array<{ id: string; displayName: string; role: Role; alive: boolean; eliminated?: PlayerState['eliminated'] }>;
       events: PublicEvent[];
       predictions: Array<{ actorId: string; correct: number; total: number }>;
+      votingHistory: VoteResult[];
+      nightResults: NightResult[];
     };
   };
 }
@@ -196,6 +242,7 @@ export type ClientCommand =
   | { type: 'ready'; roomId: string; ready: boolean; sequence: number } & CommandEnvelope
   | { type: 'start'; roomId: string; sequence: number } & CommandEnvelope
   | { type: 'ack_role'; roomId: string; sequence: number } & CommandEnvelope
+  | { type: 'discussion_ready'; roomId: string; ready: boolean; sequence: number } & CommandEnvelope
   | { type: 'night_action'; roomId: string; targetId: string | null; confirmed: boolean; sequence: number } & CommandEnvelope
   | { type: 'vote'; roomId: string; targetId: string | null; confirmed: boolean; runoff: boolean; sequence: number } & CommandEnvelope
   | { type: 'rematch'; roomId: string; sameSettings: boolean; sequence: number } & CommandEnvelope
